@@ -66,7 +66,7 @@
     <link name="${prefix}base_link" >
       <visual>
         <geometry>
-	  <mesh filename="package://tm_description/meshes/tm700/visual/Base.STL" />
+	  <mesh filename="package://tm_description/meshes/tm700/visual/Base.dae" />
         </geometry>
         <material name="Grey">
           <color rgba="0.5 0.5 0.5 1.0"/>
@@ -87,7 +87,7 @@
     <link name="${prefix}shoulder_1_link">
       <visual>
         <geometry>
-	  <mesh filename="package://tm_description/meshes/tm700/visual/Shoulder1.STL" />
+	  <mesh filename="package://tm_description/meshes/tm700/visual/Shoulder1.dae" />
         </geometry>
         <material name="DarkOlive">
           <color rgba="0.3 0.3 0.25 1.0"/>
@@ -122,7 +122,7 @@
     <link name="${prefix}arm_1_link">
       <visual>
         <geometry>
-	  <mesh filename="package://tm_description/meshes/tm700/visual/Arm1.STL" />
+	  <mesh filename="package://tm_description/meshes/tm700/visual/Arm1.dae" />
         </geometry>
         <material name="DarkOlive">
           <color rgba="0.3 0.3 0.25 1.0"/>
@@ -157,7 +157,7 @@
     <link name="${prefix}arm_2_link">
       <visual>
         <geometry>
-	  <mesh filename="package://tm_description/meshes/tm700/visual/Arm2.STL" />
+	  <mesh filename="package://tm_description/meshes/tm700/visual/Arm2.dae" />
         </geometry>
         <material name="DarkOlive">
           <color rgba="0.3 0.3 0.25 1.0"/>
@@ -193,7 +193,7 @@
     <link name="${prefix}wrist_1_link">
       <visual>
         <geometry>
-	  <mesh filename="package://tm_description/meshes/tm700/visual/Wrist1.STL" />
+	  <mesh filename="package://tm_description/meshes/tm700/visual/Wrist1.dae" />
         </geometry>
         <material name="DarkOlive">
           <color rgba="0.3 0.3 0.25 1.0"/>
@@ -228,7 +228,7 @@
     <link name="${prefix}wrist_2_link">
       <visual>
         <geometry>
-	  <mesh filename="package://tm_description/meshes/tm700/visual/Wrist2.STL" />
+	  <mesh filename="package://tm_description/meshes/tm700/visual/Wrist2.dae" />
         </geometry>
         <material name="DarkOlive">
           <color rgba="0.3 0.3 0.25 1.0"/>
@@ -263,7 +263,7 @@
     <link name="${prefix}wrist_3_link">
       <visual>
         <geometry>
-	  <mesh filename="package://tm_description/meshes/tm700/visual/Wrist3.STL" />
+	  <mesh filename="package://tm_description/meshes/tm700/visual/Wrist3.dae" />
         </geometry>
 	<origin xyz="0 0 0.015" rpy="0 0 0"/>
         <material name="Grey">
