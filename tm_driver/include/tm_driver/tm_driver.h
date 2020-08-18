@@ -148,6 +148,8 @@ public:
 		       );
   void stopTraj();
   
+  bool servoState(){ return servo_open; }
+
 private:
   const float rad2deg;
   const float m2mm;
@@ -162,6 +164,7 @@ private:
   int servo_timeval;
   
   bool executing_traj;
+  bool servo_open;
   
   //std::mutex var_mutex;
   

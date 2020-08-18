@@ -74,6 +74,8 @@ rad2deg((float)57.2957795131)
   
   servo_timeval = 10;
   executing_traj = false;
+
+  servo_open = false;
 }
 
 TmDriver::~TmDriver() {
@@ -226,14 +228,24 @@ bool TmDriver::setServoOpen(std::string type_name) {
     if (interface->sendCommandMsg(cmd_msg.c_str()) > 0)
       ret = true;
   }
+
+  // サーボオープン済み確認
+  if(ret)
+    servo_open = true;
+
   return ret;
 }
 bool TmDriver::setServoClose() {
   std::string cmd_msg = "nrtservo " + robot_ind_str + "close ";
   if (interface->sendCommandMsg(cmd_msg.c_str()) > 0)
+  {
+    servo_open = false;
     return true;
+  }
   else
+  {
     return false;
+  }
 }
 bool TmDriver::setServoStop() {
   std::string cmd_msg = "nrtservo " + robot_ind_str + "stop ";
@@ -413,27 +425,29 @@ bool TmDriver::runTraj(std::vector<double> timestamps,
   {
   ////////////////////////////////////////////////////////////
   
-  double blend = 1.0;
+    double blend = 1.0;
   
-  //TODO set resonable jog speed
-  while (executing_traj && k < timestamps.size()) {
-    if (k == timestamps.size() - 1) blend = 0.0;
-    setMoveJabs(positions[k], blend);
-    k += 1;
-    THIS_THREAD_NS_NAME::sleep_for(CHRONO_NS_NAME::milliseconds(10));
-  }
-  while (executing_traj && (interface->stateRT->getQueCmdCount() != 0)) {
-    THIS_THREAD_NS_NAME::sleep_for(CHRONO_NS_NAME::milliseconds(10));
-  }
-  if (executing_traj) {
-    executing_traj = false;
-  }
-  else {
-    setRobotStop();
-    THIS_THREAD_NS_NAME::sleep_for(CHRONO_NS_NAME::milliseconds(100));
-    setRobotRun();
-    //TODO set blend = 0
-  }
+    //TODO set resonable jog speed
+    while (executing_traj && k < timestamps.size()) {
+      if (k == timestamps.size() - 1)
+        blend = 0.0;
+
+      setMoveJabs(positions[k], blend);
+      k += 1;
+      THIS_THREAD_NS_NAME::sleep_for(CHRONO_NS_NAME::milliseconds(10));
+    }
+    while (executing_traj && (interface->stateRT->getQueCmdCount() != 0)) {
+      THIS_THREAD_NS_NAME::sleep_for(CHRONO_NS_NAME::milliseconds(10));
+    }
+    if (executing_traj) {
+      executing_traj = false;
+    }
+    else {
+      setRobotStop();
+      THIS_THREAD_NS_NAME::sleep_for(CHRONO_NS_NAME::milliseconds(100));
+      setRobotRun();
+      //TODO set blend = 0
+    }
   
   ////////////////////////////////////////////////////////////
   }
@@ -441,43 +455,44 @@ bool TmDriver::runTraj(std::vector<double> timestamps,
   {
   ////////////////////////////////////////////////////////////
   
-  std::vector<double> q_vec(positions[0].size(), 0.0);
+    std::vector<double> q_vec(positions[0].size(), 0.0);
   
-  THIS_THREAD_NS_NAME::sleep_for(CHRONO_NS_NAME::milliseconds(10)); // 15 important delay
-  while (executing_traj && k < timestamps.size()) {
-    setServojCubicAddPt(timestamps[k], positions[k], velocities[k]);
-    k += 1;
-    THIS_THREAD_NS_NAME::sleep_for(CHRONO_NS_NAME::milliseconds(10)); // 15
-    if (executing_traj && k == timestamps.size()) {
-      print_info(" TM_DRV: cubic interp. on robot side start...");
-      setServojCubicStart();
+    THIS_THREAD_NS_NAME::sleep_for(CHRONO_NS_NAME::milliseconds(10)); // 15 important delay
+    while (executing_traj && k < timestamps.size()) {
+      setServojCubicAddPt(timestamps[k], positions[k], velocities[k]);
+      k += 1;
+      THIS_THREAD_NS_NAME::sleep_for(CHRONO_NS_NAME::milliseconds(10)); // 15
+      if (executing_traj && k == timestamps.size()) {
+        print_info(" TM_DRV: cubic interp. on robot side start...");
+        setServojCubicStart();
+      }
     }
-  }
-  t0 = CHRONO_NS_NAME::high_resolution_clock::now();
-  t = t0;
-  while (executing_traj &&
-	((1.0*timestamps[timestamps.size() - 1]) >= CHRONO_NS_NAME::duration_cast<CHRONO_NS_NAME::duration<double> >(t-t0).count())
-       ) {
-    THIS_THREAD_NS_NAME::sleep_for(CHRONO_NS_NAME::milliseconds(5));
-    t = CHRONO_NS_NAME::high_resolution_clock::now();
-  }
-  while (executing_traj &&
-	((1.1*timestamps[timestamps.size() - 1] + 0.5) >= CHRONO_NS_NAME::duration_cast<CHRONO_NS_NAME::duration<double> >(t-t0).count())
-       ) {
-    interface->stateRT->getQCmd(q_vec);
-    if (vector_match(positions[timestamps.size() - 1], q_vec, 0.005)) //0.287 deg
-      break;
-    THIS_THREAD_NS_NAME::sleep_for(CHRONO_NS_NAME::milliseconds(2));
-    t = CHRONO_NS_NAME::high_resolution_clock::now();
-  }
-  if (executing_traj) {
-    executing_traj = false;
-    setMoveJabs(positions[timestamps.size() - 1], 0.0);
-    THIS_THREAD_NS_NAME::sleep_for(CHRONO_NS_NAME::milliseconds(10));
-  }
-  else {
-    setServoStop();
-  }
+
+    t0 = CHRONO_NS_NAME::high_resolution_clock::now();
+    t = t0;
+    while (executing_traj &&
+	    ((1.0*timestamps[timestamps.size() - 1]) >= CHRONO_NS_NAME::duration_cast<CHRONO_NS_NAME::duration<double> >(t-t0).count())) 
+    {
+      THIS_THREAD_NS_NAME::sleep_for(CHRONO_NS_NAME::milliseconds(5));
+      t = CHRONO_NS_NAME::high_resolution_clock::now();
+    }
+    while (executing_traj &&
+	    ((1.1*timestamps[timestamps.size() - 1] + 0.5) >= CHRONO_NS_NAME::duration_cast<CHRONO_NS_NAME::duration<double> >(t-t0).count()))
+    {
+      interface->stateRT->getQCmd(q_vec);
+      if (vector_match(positions[timestamps.size() - 1], q_vec, 0.005)) //0.287 deg
+        break;
+      THIS_THREAD_NS_NAME::sleep_for(CHRONO_NS_NAME::milliseconds(2));
+      t = CHRONO_NS_NAME::high_resolution_clock::now();
+    }
+    if (executing_traj) {
+      executing_traj = false;
+      setMoveJabs(positions[timestamps.size() - 1], 0.0);
+      THIS_THREAD_NS_NAME::sleep_for(CHRONO_NS_NAME::milliseconds(10));
+    }
+    else {
+      setServoStop();
+    }
   
   ////////////////////////////////////////////////////////////
   }
@@ -485,7 +500,7 @@ bool TmDriver::runTraj(std::vector<double> timestamps,
   {
   ////////////////////////////////////////////////////////////
   
-  executing_traj = false;
+    executing_traj = false;
   
   ////////////////////////////////////////////////////////////
   }
@@ -493,31 +508,31 @@ bool TmDriver::runTraj(std::vector<double> timestamps,
   {
   ////////////////////////////////////////////////////////////
   
-  std::vector<double> traj_point;
+    std::vector<double> traj_point;
   
-  while (executing_traj &&
-	(timestamps[timestamps.size() - 1] >= CHRONO_NS_NAME::duration_cast<CHRONO_NS_NAME::duration<double> >(t - t0).count())
-       ) {
-    while ((timestamps[k] <= CHRONO_NS_NAME::duration_cast<CHRONO_NS_NAME::duration<double> >(t - t0).count()) &&
-	  (k < timestamps.size() - 1)
-	 ) {
-      k += 1;
-    }
-    traj_point = interp_cubic(CHRONO_NS_NAME::duration_cast<CHRONO_NS_NAME::duration<double> >(t - t0).count() - timestamps[k - 1],
+    while (executing_traj &&
+  	  (timestamps[timestamps.size() - 1] >= CHRONO_NS_NAME::duration_cast<CHRONO_NS_NAME::duration<double> >(t - t0).count()))
+    {
+      while ((timestamps[k] <= CHRONO_NS_NAME::duration_cast<CHRONO_NS_NAME::duration<double> >(t - t0).count()) &&
+	      (k < timestamps.size() - 1)) 
+      {
+        k += 1;
+      }
+      traj_point = interp_cubic(CHRONO_NS_NAME::duration_cast<CHRONO_NS_NAME::duration<double> >(t - t0).count() - timestamps[k - 1],
 			      timestamps[k] - timestamps[k - 1],
 			      positions[k - 1], positions[k],
-			      velocities[k - 1], velocities[k]
-			     );
-    setServoj(traj_point);
-    THIS_THREAD_NS_NAME::sleep_for(CHRONO_NS_NAME::milliseconds(timeval));
-    t = CHRONO_NS_NAME::high_resolution_clock::now();
-  }
-  if (executing_traj) {
-    //traj_point = positions[positions.size() - 1];
-    //setServoj(traj_point);
-    executing_traj = false;
-  }
-  setServoStop();
+			      velocities[k - 1], velocities[k]);
+      setServoj(traj_point);
+      THIS_THREAD_NS_NAME::sleep_for(CHRONO_NS_NAME::milliseconds(timeval));
+      t = CHRONO_NS_NAME::high_resolution_clock::now();
+    }
+    if (executing_traj) {
+      //traj_point = positions[positions.size() - 1];
+      //setServoj(traj_point);
+      executing_traj = false;
+    }
+
+    setServoStop();
   
   ////////////////////////////////////////////////////////////
   }

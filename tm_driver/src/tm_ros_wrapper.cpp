@@ -100,6 +100,8 @@ protected:
   actionlib::ActionServer<control_msgs::FollowJointTrajectoryAction> as_;
   actionlib::ServerGoalHandle<control_msgs::FollowJointTrajectoryAction> goal_handle;
   
+  ros::Subscriber traj_sub_;
+
   bool has_goal;
   
   bool use_ros_control;
@@ -131,6 +133,8 @@ public:
      )//,
   //robot(msg_condv, msg_condv_rt, host, 0)
   {
+    traj_sub_ = nh_.subscribe("joint_trajectory_action/command", 10, &TmRosWrapper::trajSub, this);
+
     robot = new TmDriver(msg_condv, msg_condv_rt, host, 0);
     
     joint_offsets.assign(6, 0.0);
@@ -138,7 +142,7 @@ public:
     std::string joint_prefix = "";
     if (ros::param::get("~prefix", joint_prefix)) {
       if (joint_prefix.length() > 0) {
-	print_info("Setting prefix to %s", joint_prefix.c_str());
+	      print_info("Setting prefix to %s", joint_prefix.c_str());
       }
     }
     joint_names.push_back(joint_prefix + "shoulder_1_joint");
@@ -184,18 +188,18 @@ public:
     if (robot->start()) {
       if (use_ros_control) {
 #ifdef USE_BOOST
-	ros_control_thread = boost::thread(boost::bind(&TmRosWrapper::rosControlLoop, this));
+	      ros_control_thread = boost::thread(boost::bind(&TmRosWrapper::rosControlLoop, this));
 #else
-	ros_control_thread = std::thread(boost::bind(&TmRosWrapper::rosControlLoop, this));
+	      ros_control_thread = std::thread(boost::bind(&TmRosWrapper::rosControlLoop, this));
 #endif
       }
       else {
-	has_goal = false;
-	as_.start();
+      	has_goal = false;
+	      as_.start();
 #ifdef USE_BOOST
-	publisher_thread_rt = boost::thread(boost::bind(&TmRosWrapper::publishMsgRT, this));
+	      publisher_thread_rt = boost::thread(boost::bind(&TmRosWrapper::publishMsgRT, this));
 #else
-	publisher_thread_rt = std::thread(boost::bind(&TmRosWrapper::publishMsgRT, this));
+	      publisher_thread_rt = std::thread(boost::bind(&TmRosWrapper::publishMsgRT, this));
 #endif
       }
       //TODO io_srv payload_srv
@@ -221,8 +225,8 @@ public:
 private:
   void trajThread(std::vector<double> timestamps,
 		  std::vector<std::vector<double> > positions,
-		  std::vector<std::vector<double> > velocities
-		 ) {
+		  std::vector<std::vector<double> > velocities) 
+  {
     robot->runTraj(timestamps, positions, velocities);
     if (has_goal) {
       result.error_code = result.SUCCESSFUL;
@@ -232,8 +236,8 @@ private:
     printf("[ info] TM_ROS: trajThread thread finished\n");
   }
   
-  void goalCB(actionlib::ServerGoalHandle<control_msgs::FollowJointTrajectoryAction> gh) {
-    
+  void goalCB(actionlib::ServerGoalHandle<control_msgs::FollowJointTrajectoryAction> gh)
+  {  
     print_info("on goal");
     
     //TODO return condition
@@ -378,54 +382,57 @@ private:
 
   void show_traj_info(std::vector<double> timestamps,
 		      std::vector<std::vector<double> > positions,
-		      std::vector<std::vector<double> > velocities
-		     ) {
+		      std::vector<std::vector<double> > velocities)
+  {
     char msg[256];
     if (positions[0].size() >= 6) {
       print_info("----");
       for (unsigned int i = 0; i < timestamps.size(); i++) {
-	print_info("traj_pt [%d] T: < %lf >", i, timestamps[i]);
-	snprintf(msg, 256, "traj_pt [%d] P: < %.6lf, %.6lf, %.6lf, %.6lf, %.6lf, %.6lf >",
-		 i, positions[i][0], positions[i][1], positions[i][2], positions[i][3], positions[i][4], positions[i][5]);
+	      print_info("traj_pt [%d] T: < %lf >", i, timestamps[i]);
+	      snprintf(msg, 256, "traj_pt [%d] P: < %.6lf, %.6lf, %.6lf, %.6lf, %.6lf, %.6lf >",
+		      i, positions[i][0], positions[i][1], positions[i][2], positions[i][3], positions[i][4], positions[i][5]);
         print_info(msg);
         snprintf(msg, 256, "traj_pt [%d] V: < %.6lf, %.6lf, %.6lf, %.6lf, %.6lf, %.6lf >",
-		 i, velocities[i][0], velocities[i][1], velocities[i][2], velocities[i][3], velocities[i][4], velocities[i][5]);
-	print_info(msg);
-	print_info("----");
+		      i, velocities[i][0], velocities[i][1], velocities[i][2], velocities[i][3], velocities[i][4], velocities[i][5]);
+	      print_info(msg);
+	      print_info("----");
       }
     }
   }
   
-  void reorder_traj_joints(trajectory_msgs::JointTrajectory& traj) {
+  void reorder_traj_joints(trajectory_msgs::JointTrajectory& traj)
+  {
     /* Reorders trajectory - destructive */
     std::vector<unsigned int> mapping;
     mapping.resize(joint_names.size(), joint_names.size());
     for (unsigned int i = 0; i < traj.joint_names.size(); i++) {
       for (unsigned int j = 0; j < joint_names.size(); j++) {
-	if (traj.joint_names[i] == joint_names[j])
-	  mapping[j] = i;
+	      if (traj.joint_names[i] == joint_names[j])
+	        mapping[j] = i;
+        }
       }
-    }
-    std::vector<trajectory_msgs::JointTrajectoryPoint> new_traj;
-    for (unsigned int i = 0; i < traj.points.size(); i++) {
-      trajectory_msgs::JointTrajectoryPoint new_point;
-      for (unsigned int j = 0; j < traj.points[i].positions.size(); j++) {
-	new_point.positions.push_back(traj.points[i].positions[mapping[j]]);
-	new_point.velocities.push_back(traj.points[i].velocities[mapping[j]]);
-	if (traj.points[i].accelerations.size() != 0)
-	  new_point.accelerations.push_back(traj.points[i].accelerations[mapping[j]]);
+      std::vector<trajectory_msgs::JointTrajectoryPoint> new_traj;
+      for (unsigned int i = 0; i < traj.points.size(); i++) {
+        trajectory_msgs::JointTrajectoryPoint new_point;
+        for (unsigned int j = 0; j < traj.points[i].positions.size(); j++) {
+          new_point.positions.push_back(traj.points[i].positions[mapping[j]]);
+          new_point.velocities.push_back(traj.points[i].velocities[mapping[j]]);
+          if (traj.points[i].accelerations.size() != 0)
+            new_point.accelerations.push_back(traj.points[i].accelerations[mapping[j]]);
+        }
+        new_point.time_from_start = traj.points[i].time_from_start;
+        new_traj.push_back(new_point);
       }
-      new_point.time_from_start = traj.points[i].time_from_start;
-      new_traj.push_back(new_point);
-    }
     traj.points = new_traj;
   }
-  bool start_positions_match(const trajectory_msgs::JointTrajectory &traj, double eps) {
+
+  bool start_positions_match(const trajectory_msgs::JointTrajectory &traj, double eps)
+  {
     std::vector<double> q_actual;
     robot->interface->stateRT->getQAct(q_actual);
     for (unsigned int i = 0; i < traj.points[0].positions.size(); i++) {
       if (fabs(traj.points[0].positions[i] - q_actual[i]) > eps) {
-	return false;
+	      return false;
       }
     }
     return true;
@@ -439,60 +446,68 @@ private:
     for (unsigned int i = 0; i < goal.trajectory.joint_names.size(); i++) {
       unsigned int j;
       for (j = 0; j < joint_names.size(); j++) {
-	if (goal.trajectory.joint_names[i] == joint_names[j])
-	  break;
+	      if (goal.trajectory.joint_names[i] == joint_names[j])
+	        break;
       }
       if (goal.trajectory.joint_names[i] == joint_names[j]) {
-	joint_names.erase(joint_names.begin() + j);
+	      joint_names.erase(joint_names.begin() + j);
       }
       else {
-	return false;
+	      return false;
       }
     }
     return true;
   }
-  bool has_velocities() {
+
+  bool has_velocities() 
+  {
     actionlib::ActionServer<control_msgs::FollowJointTrajectoryAction>::Goal goal = *goal_handle.getGoal();
     for (unsigned int i = 0; i < goal.trajectory.points.size(); i++) {
       if (goal.trajectory.points[i].positions.size() != goal.trajectory.points[i].velocities.size())
-	return false;
+	      return false;
     }
     return true;
   }
-  bool has_positions() {
+ 
+  bool has_positions()
+  {
     actionlib::ActionServer<control_msgs::FollowJointTrajectoryAction>::Goal goal = *goal_handle.getGoal();
     if (goal.trajectory.points.size() == 0)
       return false;
     for (unsigned int i = 0; i < goal.trajectory.points.size(); i++) {
       if (goal.trajectory.points[i].positions.size() != goal.trajectory.joint_names.size())
-	return false;
+	      return false;
     }
     return true;
   }
+
   bool has_limited_velocities() {
     actionlib::ActionServer<control_msgs::FollowJointTrajectoryAction>::Goal goal = *goal_handle.getGoal();
     for (unsigned int i = 0; i < goal.trajectory.points.size(); i++) {
       for (unsigned int j = 0; j < goal.trajectory.points[i].velocities.size(); j++) {
-	if (fabs(goal.trajectory.points[i].velocities[j]) > max_velocity)
-	  return false;
+      	if (fabs(goal.trajectory.points[i].velocities[j]) > max_velocity)
+	        return false;
       }
     }
     return true;
   }
-  bool traj_is_finite() {
+ 
+  bool traj_is_finite()
+  {
     actionlib::ActionServer<control_msgs::FollowJointTrajectoryAction>::Goal goal = *goal_handle.getGoal();
     for (unsigned int i = 0; i < goal.trajectory.points.size(); i++) {
       for (unsigned int j = 0; j < goal.trajectory.points[i].velocities.size(); j++) {
-	if (!std::isfinite(goal.trajectory.points[i].positions[j]))
-	  return false;
-	if (!std::isfinite(goal.trajectory.points[i].velocities[j]))
-	  return false;
+      	if (!std::isfinite(goal.trajectory.points[i].positions[j]))
+	        return false;
+	      if (!std::isfinite(goal.trajectory.points[i].velocities[j]))
+	        return false;
       }
     }
     return true;
   }
   
-  void rosControlLoop() {
+  void rosControlLoop()
+  {
     static const double BILLION = 1000000000.0;
     struct timespec current_time, last_time;
     ros::Duration elapsed_time;
@@ -508,12 +523,11 @@ private:
 #endif
       
       while (!robot->interface->stateRT->getDataUpdated()) {
-	msg_condv_rt.wait(locker);
+	      msg_condv_rt.wait(locker);
       }
       clock_gettime(CLOCK_MONOTONIC, &current_time);
       elapsed_time = ros::Duration(current_time.tv_sec - last_time.tv_sec +
-				   (current_time.tv_nsec - last_time.tv_nsec) / BILLION
-				  );
+				                          (current_time.tv_nsec - last_time.tv_nsec) / BILLION);
       last_time = current_time;
       // Input
       hw_interface->read();
@@ -524,7 +538,8 @@ private:
     }
   }
   
-  bool setIO(tm_msgs::SetIORequest& req, tm_msgs::SetIOResponse& res) {
+  bool setIO(tm_msgs::SetIORequest& req, tm_msgs::SetIOResponse& res)
+  {
     bool b = false, ret = false;
     if (req.ch < 0) {
       res.success = ret;
@@ -532,31 +547,34 @@ private:
     }
     if (req.value != 0)
       b = true;
+
     switch (req.fun) {
       case 0: //tm_msgs::SetIORequest::FUN_SET_MB_DIGITAL_OUT:
-	print_info("TM_ROS: setting mb DO...");
-	if (req.ch < 12) {
-	  ret = robot->setDigitalOutputMB(req.ch, b);
-	}
-	break;
+        print_info("TM_ROS: setting mb DO...");
+        if (req.ch < 12) {
+          ret = robot->setDigitalOutputMB(req.ch, b);
+        }
+        break;
       case 1: //tm_msgs::SetIORequest::FUN_SET_MB_ANALOG_OUT:
-	if (req.ch < 2) {
-	}
-	break;
+        if (req.ch < 2) {
+        }
+        break;
       case 2: //tm_msgs::SetIORequest::FUN_SET_EE_DIGITAL_OUT:
-	print_info("TM_ROS: setting ee DO...");
-	if (req.ch < 4) {
-	  ret = robot->setDigitalOutputEE(req.ch, b);
-	}
-	break;
+        print_info("TM_ROS: setting ee DO...");
+        if (req.ch < 4) {
+          ret = robot->setDigitalOutputEE(req.ch, b);
+        }
+        break;
       case 3: //tm_msgs::SetIORequest::FUN_SET_EE_ANALOG_OUT:
-	if (req.ch < 0) {
-	}
-	break;
+        if (req.ch < 0) {
+        }
+        break;
     }
+
     res.success = ret;
     if (!ret)
       print_warning("TM_ROS: set io failed");
+
     return ret;
   }
   
@@ -590,14 +608,14 @@ private:
 #endif
       
       while (!robot->interface->stateRT->getDataUpdated()) {
-	msg_condv_rt.wait(locker);
+	      msg_condv_rt.wait(locker);
       }
       
       //Publish JointState
       joint_msg.header.stamp = ros::Time::now();
       robot_state_time = robot->interface->stateRT->getQAct(joint_msg.position);
       for (unsigned int i = 0; i < joint_msg.position.size(); i++) {
-	joint_msg.position[i] += joint_offsets[i];
+	      joint_msg.position[i] += joint_offsets[i];
       }
       robot_state_time = robot->interface->stateRT->getQdAct(joint_msg.velocity);
       robot_state_time = robot->interface->stateRT->getQtAct(joint_msg.effort);
@@ -637,9 +655,9 @@ private:
       tool_pose_msg.pose.orientation.w = quat.w();
       tool_pos_pub.publish(tool_pose_msg);
       transform.setOrigin(tf::Vector3(
-	robot_state_vec[0],
-	robot_state_vec[1],
-	robot_state_vec[2]));
+	      robot_state_vec[0],
+	      robot_state_vec[1],
+	      robot_state_vec[2]));
       transform.setRotation(quat);
       tf_bc.sendTransform(tf::StampedTransform(transform, joint_msg.header.stamp, base_frame, tool_frame));
       
@@ -648,6 +666,68 @@ private:
     printf("[ info] TM_ROS: publishMsgRT thread finished\n");
   }
   
+  void trajSub(const trajectory_msgs::JointTrajectory::ConstPtr& traj)
+  {
+
+    // ロボットとの接続確認を行う
+    if (!(robot->interface->getSocketDescription() > 0)) {
+      print_error("Cannot accept new trajectories. Robot is not connected");
+      return;
+    }
+
+    // ロボットからエラーを取得する
+    unsigned char err;
+    if (robot->interface->stateRT->getError(err)) {
+      print_error("Cannot accept new trajectories. Robot is in error state");
+      return;
+    }
+
+    // 動作中の場合は強制停止させる
+    if (has_goal) {
+      print_warning("Received new goal while still executing previous trajectory. Canceling previous trajectory");
+      has_goal = false;
+      robot->stopTraj();
+#ifdef USE_BOOST
+      boost::this_thread::sleep_for(boost::chrono::milliseconds(250));
+#else
+      std::this_thread::sleep_for(std::chrono::milliseconds(250));
+#endif
+    }
+
+    // サーボが起動しているか確認する
+    if(!robot->servoState())
+    {
+      if(!robot->setServoOpen("servoj 1"))
+      {
+        print_error("Cannot open Robot server.");
+        return;
+      }
+    }
+
+    trajectory_msgs::JointTrajectory traj_new;
+
+    traj_new = *traj;
+
+    reorder_traj_joints(traj_new);
+    // robot->setServoj();    
+
+    // 動作開始位置が現在地から離れすぎていないか確認
+    if (!start_positions_match(traj_new, 0.01)) { //0.573 deg
+      print_error("Goal start doesn't match current pose");
+      return;
+    }
+    
+    // 動作ポイントが多すぎる場合の異常処理
+    if (traj_new.points.size() > 60) {
+      print_error("Number of trajectory point is >60");
+      return;
+    }
+
+    for(int i=0; i<traj_new.points.size(); i++)
+    {
+      robot->setServoj(traj_new.points[i].positions);
+    }
+  }
 };
 
 int main(int argc, char **argv) {

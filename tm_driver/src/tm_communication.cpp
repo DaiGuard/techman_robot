@@ -353,33 +353,33 @@ void TmCommunication::threadFunction() {
       
       rv = select(sockfd + 1, &readfs, NULL, NULL, &tv);
       if (rv < 0) {
-	print_error("TM_COM: Socket select Error");
-	break;
+	      print_error("TM_COM: Socket select Error");
+	      break;
       }
       else if (rv == 0) {
-	//timeout or no data
-	if (!thread_alive)
-	  break;
+	      //timeout or no data
+	      if (!thread_alive)
+	        break;
       }
       else if (FD_ISSET(sockfd, &readfs)) {  
 	
-	memset(buf, 0, MAX_RECVDATA_SIZE);
+	      memset(buf, 0, MAX_RECVDATA_SIZE);
 	
-	n = recv(sockfd, buf, MAX_RECVDATA_SIZE, 0);
-	if (n < 0) {
-	  print_error("TM_COM: ERROR reading from socket");
-	  break;
-	}
-	else if (n == 0) {
-	  print_warning("TM_COM: Server is shutdown, reconnection is needed");
-	  break;
-	}
-	optflag = 1;
-	setsockopt(sockfd, IPPROTO_TCP, TCP_QUICKACK, &optflag, sizeof(int));
-	if (!receiveDataToSB(buf, n)) {
-	  print_warning("TM_COM: Server send data too fast");
-	  break;
-	}
+        n = recv(sockfd, buf, MAX_RECVDATA_SIZE, 0);
+        if (n < 0) {
+          print_error("TM_COM: ERROR reading from socket");
+          break;
+        }
+        else if (n == 0) {
+          print_warning("TM_COM: Server is shutdown, reconnection is needed");
+          break;
+        }
+      	optflag = 1;
+	      setsockopt(sockfd, IPPROTO_TCP, TCP_QUICKACK, &optflag, sizeof(int));
+	      if (!receiveDataToSB(buf, n)) {
+	        print_warning("TM_COM: Server send data too fast");
+	        break;
+	      }
       }
     }
     disConnect();
