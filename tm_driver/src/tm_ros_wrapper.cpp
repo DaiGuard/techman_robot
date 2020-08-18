@@ -712,10 +712,10 @@ private:
     // robot->setServoj();    
 
     // 動作開始位置が現在地から離れすぎていないか確認
-    if (!start_positions_match(traj_new, 0.01)) { //0.573 deg
-      print_error("Goal start doesn't match current pose");
-      return;
-    }
+    // if (!start_positions_match(traj_new, 0.01)) { //0.573 deg
+    //   print_error("Goal start doesn't match current pose");
+    //   return;
+    // }
     
     // 動作ポイントが多すぎる場合の異常処理
     if (traj_new.points.size() > 60) {
