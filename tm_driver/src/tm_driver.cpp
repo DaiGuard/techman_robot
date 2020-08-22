@@ -386,8 +386,10 @@ bool TmDriver::setPayload(double mass, double mx, double my, double mz) {
     double dy_2 = (ee_mass_centor[0]*ee_mass_centor[0] + ee_mass_centor[2]*ee_mass_centor[2])/10000.0;
     double dz_2 = (ee_mass_centor[0]*ee_mass_centor[0] + ee_mass_centor[1]*ee_mass_centor[1])/10000.0;
 
-    snprintf(var_str, 16,  " 0~0~0~0~0~0~%.1f~0~0~0~%.1f~%.1f~%.1f~%.1f~%.1f~%.1f~0~0~0~0~0~0", 
-            ee_payload, ee_payload*dx_2, ee_payload*dy_2, ee_payload*dz_2);
+    snprintf(var_str, 16,  " 0~0~0~0~0~0~%.1lf~0~0~0~%.1lf~%.1lf~%.1lf~%.1lf~%.1lf~%.1lf~0~0~0~0~0~0", 
+            ee_payload, 
+            ee_mass_centor[0], ee_mass_centor[1], ee_mass_centor[2], 
+            ee_payload*dx_2, ee_payload*dy_2, ee_payload*dz_2);
 
     cmd_msg += var_str;
   }
