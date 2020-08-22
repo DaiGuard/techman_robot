@@ -13,6 +13,13 @@
   <arg name="servo_time" />
   <arg name="min_payload" />
   <arg name="max_payload" />
+
+  <!-- add payload parameter -->
+  <arg name="payload_mass" default="6.0" />
+  <arg name="payload_center_x" default="0.0" />
+  <arg name="payload_center_y" default="0.0" />
+  <arg name="payload_center_z" default="0.06" />
+
   <!-- The max_velocity parameter is only used for debugging in the ur_driver. It's not related to actual velocity limits -->
   <arg name="max_velocity" default="10.0"/> <!-- [rad/s] -->
   <arg name="base_frame" default="$(arg prefix)base_link" />
@@ -31,5 +38,12 @@
     <param name="max_velocity" type="double" value="$(arg max_velocity)" />
     <param name="base_frame" type="str" value="$(arg base_frame)" />
     <param name="tool_frame" type="str" value="$(arg tool_frame)" />
+
+    <!-- add payload parameter -->
+    <param name="payload_mass" type="double" value="$(arg payload_mass)" />
+    <param name="payload_center_x" type="double" value="$(arg payload_center_x)" />
+    <param name="payload_center_y" type="double" value="$(arg payload_center_y)" />
+    <param name="payload_center_z" type="double" value="$(arg payload_center_z)" />
+
   </node>
 </launch>

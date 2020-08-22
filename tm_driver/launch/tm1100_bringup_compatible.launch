@@ -12,6 +12,12 @@
   <arg name="min_payload" default="0.0" />
   <arg name="max_payload" default="5.0" />
 
+  <!-- add payload parameter -->
+  <arg name="payload_mass" default="6.0" />
+  <arg name="payload_center_x" default="0.0" />
+  <arg name="payload_center_y" default="0.0" />
+  <arg name="payload_center_z" default="0.06" />
+
   <!-- robot model -->
   <!--
   <include file="$(find tm_description)/launch/tm900_upload.launch">
@@ -25,6 +31,13 @@
     <arg name="servo_time" value="0.08" />
     <arg name="min_payload" value="$(arg min_payload)" />
     <arg name="max_payload" value="$(arg max_payload)" />
+
+    <!-- add payload parameter -->
+    <arg name="payload_mass" value="$(arg payload_mass)" />
+    <arg name="payload_center_x" value="$(arg payload_center_x)" />
+    <arg name="payload_center_y" value="$(arg payload_center_y)" />
+    <arg name="payload_center_z" value="$(arg payload_center_z)" />
+    
   </include>
 
 </launch>
