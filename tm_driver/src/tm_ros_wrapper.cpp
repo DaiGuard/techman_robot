@@ -108,6 +108,11 @@ protected:
   double servo_timeval;
   double max_velocity;
   double max_payload;
+  double payload_mass;
+  double payload_center_x;
+  double payload_center_y;
+  double payload_center_z;
+
   std::vector<double> joint_offsets;
   std::vector<std::string> joint_names;
   std::string base_frame;
@@ -182,10 +187,24 @@ public:
     print_info("TM_ROS: max_velocity:= %.4f [rad/s]", max_velocity);
     
     max_payload = 3.0;
+    payload_mass = 0.0;
+    payload_center_x = 0.0;
+    payload_center_y = 0.0;
+    payload_center_z = 0.0;
     ros::param::get("~max_payload", max_payload);
-    print_info("TM_ROS: max_payload:= %.4f [rad/s]", max_payload);
+    ros::param::get("~payload_mass", payload_mass);
+    ros::param::get("~payload_center_x", payload_center_z);
+    ros::param::get("~payload_center_y", payload_center_y);
+    ros::param::get("~payload_center_z", payload_center_z);
+    print_info("TM_ROS: max_payload:= %.4f [kg]", max_payload);
+    print_info("TM_ROS: payload:= %.4f (%.4, %.4, %.4) [kg]",
+               payload_mass, payload_center_x, payload_center_y, payload_center_z);
     
     if (robot->start()) {
+
+      // initialize robot parameters
+      robot->setPayload(payload_mass, payload_center_x, payload_center_y, payload_center_z);
+
       if (use_ros_control) {
 #ifdef USE_BOOST
 	      ros_control_thread = boost::thread(boost::bind(&TmRosWrapper::rosControlLoop, this));

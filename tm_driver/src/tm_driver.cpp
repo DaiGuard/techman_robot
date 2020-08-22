@@ -362,9 +362,37 @@ bool TmDriver::setDigitalOutputEE(unsigned char ch, bool b) {
   return setCommandMsg(cmd_msg);
 }
 
-bool TmDriver::setPayload(double mass) {
-  ee_payload = mass;
-  return true;
+bool TmDriver::setPayload(double mass, double mx, double my, double mz) {
+
+  std::string cmd_msg;
+  char var_str[16];
+
+  // mass value check
+  if(mass < 0.0)
+  {
+    cmd_msg = "cmd3e 0 0";
+  }
+  else
+  {
+    ee_payload = mass;
+
+    ee_mass_centor[0] = mx;
+    ee_mass_centor[1] = my;
+    ee_mass_centor[2] = mz;
+
+    cmd_msg = "cmd3e " + robot_ind_str + " 1";
+
+    double dx_2 = (ee_mass_centor[1]*ee_mass_centor[1] + ee_mass_centor[2]*ee_mass_centor[2])/10000.0;
+    double dy_2 = (ee_mass_centor[0]*ee_mass_centor[0] + ee_mass_centor[2]*ee_mass_centor[2])/10000.0;
+    double dz_2 = (ee_mass_centor[0]*ee_mass_centor[0] + ee_mass_centor[1]*ee_mass_centor[1])/10000.0;
+
+    snprintf(var_str, 16,  " 0~0~0~0~0~0~%.1f~0~0~0~%.1f~%.1f~%.1f~%.1f~%.1f~%.1f~0~0~0~0~0~0", 
+            ee_payload, ee_payload*dx_2, ee_payload*dy_2, ee_payload*dz_2);
+
+    cmd_msg += var_str;
+  }
+
+  return setCommandMsg(cmd_msg);
 }
 
 std::vector<double> TmDriver::interp_cubic(double t, double T,

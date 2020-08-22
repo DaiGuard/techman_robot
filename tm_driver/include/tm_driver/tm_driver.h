@@ -131,7 +131,7 @@ public:
   //bool setAnalogOutputMB(unsigned int ch, double val);
   //bool setAnalogOutputEE(unsigned int ch, double val);
   
-  bool setPayload(double mass);
+  bool setPayload(double mass, double mx, double my, double mz);
   //bool setEndEffector(std::vector<double> cm);
   
   std::vector<double> interp_cubic(double t, double T,
